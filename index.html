@@ -1,0 +1,942 @@
+<title>KetoPal</title>
+<meta name="theme-color" content="#0a6863">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KetoPal">
+<meta name="description" content="Apoyo a la decisión clínica en pacientes con dieta cetogénica: fármacos sin hidratos de carbono, cálculo de SRO hiposódica y Glucocemin 50%, hipercetosis e hipoglucemia.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: cabecera compacta + barra de pestañas fija; cada pestaña = columna de trabajo (entradas) + columna de resultados que cae debajo en móvil */
+:root{
+  --bg:#eef2f1; --surface:#ffffff; --surface-2:#f6f9f8; --ink:#15211f; --muted:#566764; --line:#d4dddb;
+  --accent:#0a6863; --accent-ink:#ffffff; --accent-soft:#dcefed;
+  --ok:#1d7a3e; --ok-soft:#e0f2e6; --warn:#9a5b00; --warn-soft:#fbf0dc; --crit:#b42318; --crit-soft:#fde7e5;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1514; --surface:#162120; --surface-2:#1b2827; --ink:#e4edeb; --muted:#9db0ac; --line:#2b3a38;
+  --accent:#4cc2b6; --accent-ink:#06201e; --accent-soft:#163a37;
+  --ok:#6fd394; --ok-soft:#14301f; --warn:#f2b552; --warn-soft:#352812; --crit:#ff8a7e; --crit-soft:#3a1714;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0e1514; --surface:#162120; --surface-2:#1b2827; --ink:#e4edeb; --muted:#9db0ac; --line:#2b3a38;
+  --accent:#4cc2b6; --accent-ink:#06201e; --accent-soft:#163a37;
+  --ok:#6fd394; --ok-soft:#14301f; --warn:#f2b552; --warn-soft:#352812; --crit:#ff8a7e; --crit-soft:#3a1714;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h2{font-size:1.45rem}
+h3{font-size:1.08rem}
+p{margin:0}
+a{color:var(--accent)}
+small,.muted{color:var(--muted)}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+header.top{padding-block:20px 12px}
+.brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.brand h1{font-size:1.7rem;letter-spacing:-.01em}
+.brand h1 span{color:var(--accent)}
+.brand p{color:var(--muted);font-size:.92rem}
+.disclaimer{margin-top:10px;font-size:.84rem;color:var(--muted);max-width:80ch}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs button{flex:0 0 auto;font:inherit;font-weight:700;font-size:.95rem;background:none;border:0;color:var(--muted);padding:12px 14px 11px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button .k{font-family:var(--f-mono);font-size:.78rem;margin-right:6px;opacity:.75}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+main{padding-block:22px 40px}
+section.panel{display:grid;gap:18px}
+.lede{display:grid;gap:6px;max-width:80ch}
+.lede p{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:18px;align-items:start}
+.grid2.even{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:860px){.grid2,.grid2.even{grid-template-columns:minmax(0,1fr)}}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:14px;min-width:0}
+.box.flat{background:var(--surface-2)}
+.stack{display:grid;gap:12px;min-width:0}
+
+/* Formularios */
+.field{display:grid;gap:5px}
+.field label,.lbl{font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+input[type=number],input[type=search],input[type=text],select,textarea{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0;font-size:16px}
+input[type=number]{font-family:var(--f-mono)}
+textarea{min-height:86px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.unit{position:relative}
+.unit input{padding-right:64px}
+.unit span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.82rem;color:var(--muted);pointer-events:none;font-family:var(--f-mono)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.hint{font-size:.84rem;color:var(--muted)}
+
+/* Resultados */
+.result{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden;min-width:0}
+.result header{padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;align-items:baseline}
+.result header .tag{font-size:.78rem;color:var(--muted)}
+.result .body{padding:14px 16px;display:grid;gap:12px}
+.big{display:flex;flex-wrap:wrap;gap:10px 26px}
+.big div{display:grid;gap:2px}
+.big b{font-family:var(--f-mono);font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.big b small{font-size:.9rem;color:var(--muted);font-weight:400;margin-left:3px}
+.big span{font-size:.8rem;color:var(--muted)}
+dl.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;margin:0;font-size:.95rem}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{margin:0;font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.callout{border-radius:8px;padding:10px 12px;font-size:.92rem;border-left:4px solid var(--line);background:var(--surface-2)}
+.callout.ok{border-color:var(--ok);background:var(--ok-soft)}
+.callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+.callout.crit{border-color:var(--crit);background:var(--crit-soft)}
+.callout b{font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+ul.clean{margin:0;padding-left:1.1em;display:grid;gap:4px}
+ol.steps{margin:0;padding-left:1.3em;display:grid;gap:8px}
+.src{font-size:.78rem;color:var(--muted)}
+
+/* Fármacos */
+.search{position:relative}
+.search input{font-size:1.05rem;padding:13px 14px}
+.drug-verdict{display:grid;gap:8px}
+.druglist{display:grid;gap:16px}
+.group h3{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:6px}
+.group h3 small{font-family:var(--f-body);font-weight:400;font-size:.8rem}
+.drug{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:8px 0;border-bottom:1px dashed var(--line);align-items:center}
+.drug:last-child{border-bottom:0}
+.drug .n{font-weight:700}
+.drug .a{font-size:.85rem;color:var(--muted)}
+mark{background:var(--accent-soft);color:inherit;border-radius:3px;padding:0 2px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.82rem;padding:3px 9px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
+.chip.hit{background:var(--crit-soft);border-color:var(--crit);color:var(--crit);font-weight:700}
+
+/* Tablas */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700}
+td.num{text-align:right}
+
+/* Flujo de decisión */
+.flow{display:grid;gap:10px}
+.node{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:var(--surface)}
+.node .q{font-family:var(--f-display);font-weight:700}
+.branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.branches{grid-template-columns:minmax(0,1fr)}}
+.branch{border-radius:var(--r);padding:12px 14px;display:grid;gap:6px;border-top:4px solid var(--line);background:var(--surface)}
+.branch.a{border-top-color:var(--accent)}
+.branch.b{border-top-color:var(--warn)}
+.arrow{justify-self:center;color:var(--muted);font-family:var(--f-mono);font-size:.9rem}
+
+nav.tabs .sh{display:none}
+dl.kv dd{overflow-wrap:anywhere}
+/* Móvil */
+@media (max-width:640px){
+  body{font-size:15.5px}
+  header.top{padding-block:14px 8px}
+  .brand h1{font-size:1.45rem}
+  .brand p{font-size:.85rem}
+  .disclaimer{font-size:.78rem;margin-top:6px}
+  nav.tabs .wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding-inline:4px;overflow:visible}
+  nav.tabs button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 2px 8px;font-size:.8rem;min-height:52px;white-space:normal;text-align:center;line-height:1.15}
+  nav.tabs button .k{margin:0;font-size:.72rem}
+  nav.tabs .lg{display:none}
+  nav.tabs .sh{display:inline}
+  main{padding-block:16px 28px}
+  h2{font-size:1.22rem}
+  .lede p{font-size:.92rem}
+  .box{padding:14px;gap:12px}
+  .row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .seg button{min-height:42px;padding:8px 12px;flex:1 1 auto}
+  #g-sint button{flex:1 1 100%}
+  .result header{padding:10px 12px}
+  .result .body{padding:12px}
+  .result header h3{font-size:.98rem}
+  .big{gap:10px 18px}
+  .big b{font-size:1.35rem}
+  dl.kv{grid-template-columns:minmax(0,1fr) minmax(0,auto);font-size:.88rem;gap:6px 10px}
+  table{font-size:.86rem}
+  th,td{padding:7px 8px}
+  .drug{grid-template-columns:minmax(0,1fr)}
+  .drug .pill{justify-self:start}
+  footer.foot .wrap{flex-direction:column}
+}
+@media (max-width:360px){.row{grid-template-columns:minmax(0,1fr)}}
+footer.foot{border-top:1px solid var(--line);padding-block:16px 28px;font-size:.84rem;color:var(--muted)}
+footer.foot .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}
+@media (prefers-reduced-motion:no-preference){.result,.callout{transition:background-color .2s,border-color .2s}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Keto<span>Pal</span></h1>
+      <p>Pacientes en tratamiento con dieta cetogénica · consulta y urgencias</p>
+    </div>
+    <p class="disclaimer">Herramienta de apoyo basada en el <em>Manual para la práctica de la dieta cetogénica, 2.ª ed.</em> y en las fichas técnicas de Sueroral Hiposódico® y Glucocemin 50%®. No sustituye el juicio clínico ni la prescripción individualizada. No guarda datos de pacientes.</p>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Secciones">
+  <div class="wrap" role="tablist">
+    <button role="tab" id="t-farmacos" aria-controls="farmacos" aria-selected="true"><span class="k">1</span><span class="tl">Fármacos</span></button>
+    <button role="tab" id="t-calculo" aria-controls="calculo" aria-selected="false"><span class="k">2</span><span class="tl"><span class="lg">SRO y glucosa</span><span class="sh">SRO/Gluc.</span></span></button>
+    <button role="tab" id="t-hipercetosis" aria-controls="hipercetosis" aria-selected="false"><span class="k">3</span><span class="tl"><span class="lg">Hipercetosis</span><span class="sh">Hiperceto.</span></span></button>
+    <button role="tab" id="t-hipoglucemia" aria-controls="hipoglucemia" aria-selected="false"><span class="k">4</span><span class="tl"><span class="lg">Hipoglucemia</span><span class="sh">Hipogluc.</span></span></button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ================= 1. FÁRMACOS ================= -->
+<section class="panel" id="farmacos" role="tabpanel" aria-labelledby="t-farmacos">
+  <div class="lede">
+    <h2>Fármacos sin o con baja proporción de hidratos de carbono</h2>
+    <p>Listado de la Tabla 43 (pauta del informe del Hospital Infantil Universitario Niño Jesús). Busque por marca, principio activo o grupo.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="stack">
+      <div class="box">
+        <div class="field search">
+          <label for="q">Buscar fármaco</label>
+          <input type="search" id="q" placeholder="Ej.: ibuprofeno, Augmentine, ondansetrón…" autocomplete="off">
+        </div>
+        <div class="drug-verdict" id="verdict" aria-live="polite"></div>
+      </div>
+
+      <div class="box flat">
+        <h3>Si el fármaco no está en el listado</h3>
+        <p class="hint">Revise la sección 6.1 (excipientes) de la ficha técnica en <a href="https://cima.aemps.es/cima/publico/home.html" target="_blank" rel="noopener">CIMA · AEMPS</a> y pegue aquí la lista de excipientes para detectar hidratos de carbono.</p>
+        <div class="field">
+          <label for="exc">Excipientes de la ficha técnica</label>
+          <textarea id="exc" placeholder="Pegue aquí el texto de la sección 6.1…">Celulosa microcristalina, croscarmelosa sódica, estearato de magnesio, lactosa monohidrato, hipromelosa, dióxido de titanio (E171).</textarea>
+        </div>
+        <div id="excOut" aria-live="polite"></div>
+        <div>
+          <span class="lbl">Excipientes que se deben evitar</span>
+          <div class="chips" id="excChips" style="margin-top:6px"></div>
+        </div>
+        <ul class="clean hint">
+          <li>Jarabes y polvo para suspensión son las formas con más hidratos de carbono: evitarlas.</li>
+          <li>Preferir comprimidos, cápsulas, ampollas o viales bebibles.</li>
+          <li>Diluciones IV en suero fisiológico siempre que el fármaco lo permita.</li>
+          <li>Evitar sueros glucosados IV y soluciones de rehidratación oral salvo indicación expresa (ver pestaña 2).</li>
+        </ul>
+        <p class="src">Fuente: Manual DC 2.ª ed., apartado 3.5.4.2.</p>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="filters">
+        <span class="lbl" style="margin-right:4px">Mostrar</span>
+        <div class="seg" id="catFilter">
+          <button type="button" data-v="all" aria-pressed="true">Todos</button>
+          <button type="button" data-v="sin" aria-pressed="false">Sin HC</button>
+          <button type="button" data-v="baja" aria-pressed="false">Baja proporción HC</button>
+        </div>
+      </div>
+      <div class="druglist" id="druglist"></div>
+      <p class="src">Fuente: Tabla 43. Instrucciones sobre la administración de fármacos en caso de enfermedades intercurrentes. Composición sujeta a cambios del fabricante: confirmar en ficha técnica vigente.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. CÁLCULO ================= -->
+<section class="panel" id="calculo" role="tabpanel" aria-labelledby="t-calculo" hidden>
+  <div class="lede">
+    <h2>SRO hiposódica y Glucocemin 50% para igualar los hidratos de carbono del día</h2>
+    <p>Calcula el volumen de solución de rehidratación oral hiposódica o de glucosa al 50% que aporta exactamente los gramos de hidratos de carbono (CHO) que el paciente toma en su dieta.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="box">
+      <h3>Datos del paciente</h3>
+      <div class="row">
+        <div class="field">
+          <label for="c-peso">Peso</label>
+          <div class="unit"><input type="number" id="c-peso" data-sync="peso" min="1" max="200" step="0.1" value="18"><span>kg</span></div>
+        </div>
+        <div class="field">
+          <label for="c-pob">Paciente</label>
+          <select id="c-pob" data-sync="pob">
+            <option value="nino" selected>Pediátrico</option>
+            <option value="adulto">Adulto</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="c-tipo">Tipo de dieta</label>
+        <select id="c-tipo">
+          <option value="clasica" selected>Clásica por ratio (DCC)</option>
+          <option value="mct">MCT (DC-MCT)</option>
+          <option value="combinada">Combinada MCT</option>
+          <option value="atkins">Atkins modificada (DAM)</option>
+          <option value="bajoig">Bajo índice glucémico</option>
+        </select>
+      </div>
+
+      <div class="field" id="ratioField">
+        <label for="c-ratio">Ratio cetogénica (grasa : proteína + CHO)</label>
+        <div class="unit"><input type="number" id="c-ratio" min="0.5" max="5" step="0.5" value="4"><span>: 1</span></div>
+      </div>
+
+      <div class="field">
+        <span class="lbl">Cantidad total de CHO al día</span>
+        <div class="seg" id="choMode">
+          <button type="button" data-v="directo" aria-pressed="true">La conozco</button>
+          <button type="button" data-v="calc" aria-pressed="false">Calcular por dieta</button>
+          <button type="button" data-v="edad" aria-pressed="false">Desconocida (por edad)</button>
+        </div>
+      </div>
+
+      <div class="field" data-mode="directo">
+        <label for="c-cho">CHO totales al día</label>
+        <div class="unit"><input type="number" id="c-cho" data-sync="cho" min="0" max="400" step="0.5" value="15"><span>g/día</span></div>
+      </div>
+
+      <div data-mode="calc" hidden class="stack">
+        <div class="row">
+          <div class="field">
+            <label for="c-kcal">Calorías de la dieta</label>
+            <div class="unit"><input type="number" id="c-kcal" min="100" max="4000" step="10" value="1200"><span>kcal</span></div>
+          </div>
+          <div class="field" id="protField">
+            <label for="c-prot">Proteínas</label>
+            <div class="unit"><input type="number" id="c-prot" min="0" max="200" step="0.5" value="18"><span>g/día</span></div>
+          </div>
+          <div class="field" id="pctField" hidden>
+            <label for="c-pct">CHO % del VCT</label>
+            <div class="unit"><input type="number" id="c-pct" min="0" max="60" step="0.5" value="20"><span>%</span></div>
+          </div>
+        </div>
+        <p class="hint" id="calcHint"></p>
+      </div>
+
+      <div class="field" data-mode="edad" hidden>
+        <label for="c-edad">Edad</label>
+        <select id="c-edad">
+          <option value="7">&lt; 1 año · 7 g/día</option>
+          <option value="10">1-3 años · 10 g/día</option>
+          <option value="15" selected>3-8 años · 15-20 g/día</option>
+          <option value="20">&gt; 8 años y adultos · 20-30 g/día</option>
+        </select>
+        <p class="hint">Tabla 42. Se usa el extremo inferior del rango; ajuste con el modo «La conozco» si procede.</p>
+      </div>
+
+      <div class="callout" id="choSummary"></div>
+    </div>
+
+    <div class="stack" id="calcOut">
+      <article class="result">
+        <header><h3>Sueroral Hiposódico® (SRO hiposódica) · vía oral / sonda</h3><span class="tag">1 sobre en 1 L de agua = 20 g glucosa</span></header>
+        <div class="body" id="sroOut"></div>
+      </article>
+      <article class="result">
+        <header><h3>Glucocemin 50%® · vía IV, siempre diluido</h3><span class="tag">0,5 g glucosa/ml · ampolla 20 ml = 10 g</span></header>
+        <div class="body" id="gluOut"></div>
+      </article>
+      <article class="result">
+        <header><h3>Corrección de hipoglucemia con conciencia conservada</h3><span class="tag">10% de los CHO diarios</span></header>
+        <div class="body" id="hipoMini"></div>
+      </article>
+    </div>
+  </div>
+
+  <div class="box flat">
+    <h3>Cuándo usar cada solución</h3>
+    <ul class="clean">
+      <li>Las SRO contienen glucosa (14-20 g/L). <b>No se deben usar de rutina en niños con dieta cetogénica.</b> Solo si hay hipoglucemia asociada o el paciente no tolera o rechaza su alimentación habitual, y en la cantidad exacta para aportar los gramos de glucosa necesarios.</li>
+      <li>Ayuno &gt; 24 h (p. ej. postoperatorio): sueroterapia IV con suero fisiológico más potasio según Holliday-Segar, añadiendo los mismos gramos de glucosa que el paciente ingiere en su dieta.</li>
+      <li>Durante sedación o anestesia: fluidos sin glucosa, con controles de glucemia y gasometría. Tratar con glucosa solo glucemias &lt; 50 mg/dl o sintomáticas.</li>
+      <li>Vómitos o diarrea sin hipoglucemia: líquidos sin azúcar con iones (agua + 4 g ClNa + 1,5 g ClK + 0,8 g HCO₃Na por litro). Al menos 10 ml/kg por deposición y 5 ml/kg por vómito.</li>
+      <li>Tras cualquier aporte de glucosa, comprobar la cetonemia.</li>
+    </ul>
+    <p class="src">Fuentes: Manual DC 2.ª ed., apartados 3.5.4.1 y 3.5.4.3, tablas 1, 14, 22, 37, 42 y 44. Fichas técnicas Sueroral Hiposódico (n.º reg. 59.877) y Glucocemin 50% (n.º reg. 74.781).</p>
+  </div>
+</section>
+
+<!-- ================= 3. HIPERCETOSIS ================= -->
+<section class="panel" id="hipercetosis" role="tabpanel" aria-labelledby="t-hipercetosis" hidden>
+  <div class="lede">
+    <h2>Actuación en hipercetosis (hipercetonemia)</h2>
+    <p>Cetonemia &gt; 5 mmol/L de β-hidroxibutirato o cetonuria de 5 cruces. Solo se trata si hay síntomas claramente relacionados.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="stack">
+      <div class="box">
+        <h3>Valores de referencia</h3>
+        <div class="tbl"><table>
+          <thead><tr><th>Parámetro</th><th>Objetivo</th><th>Hipercetosis</th></tr></thead>
+          <tbody>
+            <tr><td>β-hidroxibutirato capilar (DCC)</td><td class="mono">2,4-5 mmol/L</td><td class="mono">&gt; 5 mmol/L</td></tr>
+            <tr><td>Cetonuria (acetoacetato)</td><td class="mono">2+ a 5+ (80-160 mg/dl)</td><td class="mono">5+ / tira negra inmediata</td></tr>
+          </tbody>
+        </table></div>
+        <p class="hint">Una cifra &gt; 5 mmol/L no debe ser motivo de alarma si el paciente no tiene síntomas. En DAM la cetosis es menor y en la dieta de bajo índice glucémico no hay cetosis. El manual expresa la cetonemia en «µmol/L»; la unidad de los glucómetros-cetonómetros es mmol/L.</p>
+      </div>
+
+      <div class="box">
+        <h3>Síntomas que justifican tratar</h3>
+        <div class="chips">
+          <span class="chip">Vómitos</span><span class="chip">Irritabilidad</span><span class="chip">Letargia</span><span class="chip">Somnolencia</span><span class="chip">Polipnea</span><span class="chip">Palidez o rubor facial</span><span class="chip">Taquicardia</span>
+        </div>
+        <div class="callout warn"><b>Determinar siempre la glucemia.</b> El manejo depende de si hay hipoglucemia asociada.</div>
+      </div>
+
+      <div class="box">
+        <h3>Calculadora</h3>
+        <div class="row">
+          <div class="field">
+            <label for="h-peso">Peso</label>
+            <div class="unit"><input type="number" id="h-peso" data-sync="peso" min="1" max="200" step="0.1" value="18"><span>kg</span></div>
+          </div>
+          <div class="field">
+            <label for="h-eb">Exceso de bases (si gasometría)</label>
+            <div class="unit"><input type="number" id="h-eb" min="-40" max="10" step="1" value="-11"><span>mEq/L</span></div>
+          </div>
+        </div>
+        <div id="hcOut" class="stack" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="flow">
+        <div class="node"><span class="q">1. ¿Cetonemia &gt; 5 mmol/L o cetonuria 5+ con síntomas?</span><p class="hint">Si no hay síntomas: no tratar, vigilar y repetir control.</p></div>
+        <div class="arrow">↓ sí · medir glucemia</div>
+        <div class="branches">
+          <div class="branch a">
+            <h3>a) Sin hipoglucemia</h3>
+            <ul class="clean">
+              <li><b>Con vía IV:</b> suero fisiológico en bolo de <b>10 ml/kg</b>. Más volumen si hay deshidratación.</li>
+              <li><b>Sin vía IV</b> y sin contraindicación (vómitos, íleo, alteración de conciencia): líquidos por boca o sonda con iones: por cada 1000 ml de agua, 4 g ClNa + 1,5 g ClK.</li>
+              <li>Recontrolar glucemia y cetonemia. Repetir líquidos si es necesario.</li>
+            </ul>
+          </div>
+          <div class="branch b">
+            <h3>b) Con hipoglucemia</h3>
+            <ul class="clean">
+              <li>Aportar glucosa según la pauta de hipoglucemia (pestaña 4).</li>
+              <li>Después, administrar líquidos como en a).</li>
+            </ul>
+            <button type="button" class="seg-link" data-goto="hipoglucemia" style="justify-self:start;font:inherit;font-size:.9rem;background:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--accent);cursor:pointer">Ir a hipoglucemia →</button>
+          </div>
+        </div>
+        <div class="arrow">↓ si persiste o hay acidosis</div>
+        <div class="node">
+          <span class="q">2. Acidosis metabólica</span>
+          <p>Gasometría, función renal, iones, glucemia, cetonemia y cetonuria. Tratar la causa con líquidos <b>sin glucosa</b> (suero fisiológico 10-20 ml/kg), salvo hipoglucemia. Bicarbonato solo si persiste tras reponer volumen y hay pH &lt; 7,20, EB &lt; -10 o HCO₃ &lt; 10 mEq/L.</p>
+          <p class="hint">Considerar fármacos que favorecen la acidosis junto con la dieta: zonisamida, topiramato, acetazolamida.</p>
+        </div>
+      </div>
+
+      <div class="box">
+        <h3>Causas y soluciones de la cetosis excesiva</h3>
+        <div class="tbl"><table>
+          <thead><tr><th>Causa posible</th><th>Solución propuesta</th></tr></thead>
+          <tbody>
+            <tr><td>Mala distribución de los CHO a lo largo del día</td><td>Corregir síntomas de hipoglucemia o hipercetosis. Revisar la distribución de CHO en DC-MCT, DAM o bajo índice glucémico.</td></tr>
+            <tr><td>Ratio demasiado alta al inicio de la dieta</td><td>Disminuir la ratio 0,5-1,0.</td></tr>
+            <tr><td>DC-MCT con % MCT/LCT demasiado alto</td><td>Comprobar la distribución de los CHO.</td></tr>
+            <tr><td>Vómitos por enfermedad</td><td>Valorar la ingesta espontánea, mantener la hidratación, controlar cetonas y glucemias con más frecuencia.</td></tr>
+            <tr><td>Baja ingesta calórica o necesidades energéticas infraestimadas</td><td>Aumentar las calorías y recalcular las necesidades.</td></tr>
+          </tbody>
+        </table></div>
+        <p class="src">Fuente: Manual DC 2.ª ed., apartados 3.4.4, 3.5.1.3 y 3.5.1.4; tablas 36, 37, 39 y 40.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4. HIPOGLUCEMIA ================= -->
+<section class="panel" id="hipoglucemia" role="tabpanel" aria-labelledby="t-hipoglucemia" hidden>
+  <div class="lede">
+    <h2>Actuación en hipoglucemia</h2>
+    <p>Mantener la glucemia por encima de 60 mg/dl (55 mg/dl en adultos). Diagnóstico por la tríada de Whipple: síntomas compatibles, glucosa plasmática baja y mejoría al normalizarla.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="box">
+      <h3>Situación del paciente</h3>
+      <div class="row">
+        <div class="field">
+          <label for="g-glu">Glucemia</label>
+          <div class="unit"><input type="number" id="g-glu" min="5" max="300" step="1" value="42"><span>mg/dl</span></div>
+        </div>
+        <div class="field">
+          <label for="g-peso">Peso</label>
+          <div class="unit"><input type="number" id="g-peso" data-sync="peso" min="1" max="200" step="0.1" value="18"><span>kg</span></div>
+        </div>
+        <div class="field">
+          <label for="g-cho">CHO de su dieta</label>
+          <div class="unit"><input type="number" id="g-cho" data-sync="cho" min="0" max="400" step="0.5" value="15"><span>g/día</span></div>
+        </div>
+        <div class="field">
+          <label for="g-pob">Paciente</label>
+          <select id="g-pob" data-sync="pob">
+            <option value="nino" selected>Pediátrico</option>
+            <option value="adulto">Adulto</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lbl">Síntomas</span>
+        <div class="seg" id="g-sint">
+          <button type="button" data-v="no" aria-pressed="false">Asintomático</button>
+          <button type="button" data-v="si" aria-pressed="true">Síntomas leves-moderados</button>
+          <button type="button" data-v="grave" aria-pressed="false">Conciencia alterada o síntomas graves</button>
+        </div>
+      </div>
+      <p class="hint">Síntomas: debilidad, mareo, sudoración, palidez, temblor, hipotermia, náuseas, irritabilidad; en casos graves letargia o convulsiones.</p>
+      <div id="hgOut" class="stack" aria-live="polite"></div>
+    </div>
+
+    <div class="stack">
+      <div class="box">
+        <h3>Niños con dieta cetogénica</h3>
+        <ol class="steps">
+          <li><b>Umbral de tratamiento.</b> Tratar toda hipoglucemia sintomática. Asintomática: tratar si &lt; 30 mg/dl (antes &lt; 50 mg/dl).</li>
+          <li><b>Conciencia conservada → vía oral.</b> Adelantar la siguiente toma. Si no es posible, líquidos azucarados con el <b>10% de los CHO diarios</b> de su dieta: SRO (14-20 g/L), suero glucosado 10% (100 g/L) o zumo de naranja natural (≈100 g/L).</li>
+          <li><b>Conciencia alterada o síntomas graves → vía IV.</b> Bolo de glucosa <b>0,25 g/kg</b> = <b>2,5 ml/kg de suero glucosado 10%</b>. Eleva la glucemia unos 35 mg/dl.</li>
+          <li><b>Control a los 10 minutos.</b> Si sigue baja, repetir la dosis.</li>
+          <li><b>Después:</b> medir cetonemia para comprobar que no se ha perdido la cetosis.</li>
+        </ol>
+      </div>
+
+      <div class="box">
+        <h3>Adultos (no diabéticos)</h3>
+        <p class="hint">Tratar todas las sintomáticas y las asintomáticas &lt; 45 mg/dl.</p>
+        <div class="tbl"><table>
+          <thead><tr><th>Situación</th><th>Tratamiento</th></tr></thead>
+          <tbody>
+            <tr><td><b>Moderada</b><br><span class="mono">45-60 mg/dl</span></td><td>20 g de CHO: 4 tabletas de glucosa (Glucosport®), 200 ml de zumo o 2 sobres de azúcar.</td></tr>
+            <tr><td><b>Grave</b><br><span class="mono">&lt; 45 mg/dl</span></td><td>30 g de CHO: 6 tabletas o 300 ml de zumo por vía oral, o glucosa 50% 25 ml IV.</td></tr>
+            <tr><td><b>Grave con pérdida de conocimiento</b><br><span class="mono">&lt; 45 mg/dl</span></td><td>Glucosa 50% 25 ml IV seguida de perfusión de glucosa 5-10%, o glucagón 1 mg SC/IM (0,5 mg en niños). Decúbito lateral, vigilar vómitos.</td></tr>
+          </tbody>
+        </table></div>
+        <p class="hint">Glucemia cada 15 min hasta &gt; 100 mg/dl; repetir glucosa cada 15 min si precisa.</p>
+        <div class="callout warn">El glucagón actúa por glucogenólisis y <b>puede no ser eficaz</b> en pacientes con dieta cetogénica, que pueden no tener reserva de glucógeno. Priorizar la glucosa IV.</div>
+        <p class="src">Fuente: Manual DC 2.ª ed., apartado 3.5.1.2 y tabla 38.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>© 2026 Álvaro Navarro · CC BY-NC 4.0</span>
+    <span>Contenido: Manual para la práctica de la dieta cetogénica, 2.ª edición · Fichas técnicas AEMPS</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const fmt=(n,d=0)=>Number.isFinite(n)?n.toLocaleString("es-ES",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
+const num=el=>{const v=parseFloat(String(el.value).replace(",","."));return Number.isFinite(v)?v:NaN};
+const norm=s=>s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Pestañas ---------- */
+const tabs=$$('nav.tabs [role=tab]');
+function show(id){
+  tabs.forEach(t=>{const on=t.getAttribute("aria-controls")===id;t.setAttribute("aria-selected",on);t.tabIndex=on?0:-1;$("#"+t.getAttribute("aria-controls")).hidden=!on});
+  try{history.replaceState(null,"","#"+id)}catch(e){}
+}
+tabs.forEach((t,i)=>{
+  t.addEventListener("click",()=>show(t.getAttribute("aria-controls")));
+  t.addEventListener("keydown",e=>{
+    if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft")return;
+    const n=tabs[(i+(e.key==="ArrowRight"?1:tabs.length-1))%tabs.length];n.focus();n.click();
+  });
+});
+$$("[data-goto]").forEach(b=>b.addEventListener("click",()=>{show(b.dataset.goto);window.scrollTo({top:0})}));
+const start=(location.hash||"").slice(1);
+if(["farmacos","calculo","hipercetosis","hipoglucemia"].includes(start))show(start);
+
+/* ---------- Segmentados ---------- */
+function seg(id,cb){
+  const el=$(id);
+  el.addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    $$("button",el).forEach(x=>x.setAttribute("aria-pressed",x===b));
+    cb(b.dataset.v);
+  });
+  return ()=>$('button[aria-pressed="true"]',el).dataset.v;
+}
+
+/* ---------- Datos compartidos entre pestañas (peso, CHO, población) ---------- */
+$$("[data-sync]").forEach(el=>{
+  const ev=el.tagName==="SELECT"?"change":"input";
+  el.addEventListener(ev,()=>{
+    $$(`[data-sync="${el.dataset.sync}"]`).forEach(o=>{if(o!==el)o.value=el.value});
+    renderAll();
+  });
+});
+
+/* =================== 1. FÁRMACOS (Tabla 43) =================== */
+const DRUGS=[
+ // Antibióticos
+ ["Antibióticos","sin","Clamoxyl® 500 mg cápsulas","amoxicilina"],
+ ["Antibióticos","sin","Augmentine® 500/125 mg comprimidos","amoxicilina ácido clavulánico amoxicilina-clavulánico"],
+ ["Antibióticos","sin","Zinnat® 250 mg y 500 mg comprimidos","cefuroxima axetilo"],
+ ["Antibióticos","sin","Cefixima 200 mg y 400 mg cápsulas","cefixima"],
+ ["Antibióticos","sin","Cefalexina 500 mg cápsulas","cefalexina"],
+ ["Antibióticos","sin","Orbenin® 500 mg cápsulas","cloxacilina"],
+ ["Antibióticos","baja","Augmentine® 100/12,5 mg/ml suspensión","amoxicilina ácido clavulánico amoxicilina-clavulánico"],
+ ["Antibióticos","baja","Augmentine® 875/125 mg y 500/125 mg sobres","amoxicilina ácido clavulánico amoxicilina-clavulánico"],
+ ["Antibióticos","baja","Ceclor® 500 mg cápsulas","cefaclor"],
+ ["Antibióticos","baja","Azitromicina 250 mg y 500 mg cápsulas y comprimidos dispersables","azitromicina macrólido"],
+ ["Antibióticos","baja","Anaclosil® 500 mg cápsulas","cloxacilina"],
+ ["Antibióticos","baja","Dalacin® 150 mg y 300 mg cápsulas","clindamicina"],
+ // Analgésicos
+ ["Analgésicos, antiinflamatorios, antipiréticos","sin","Nolotil® ampollas","metamizol dipirona"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","sin","Nolotil® 575 mg cápsulas","metamizol dipirona"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","sin","Metalgial® 500 mg/ml gotas","metamizol dipirona metalgal"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","sin","Termalgin® supositorios lactantes e infantil","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","sin","Apiretal® 250 mg supositorios niños","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","sin","Febrectal® supositorios lactantes, niños y adultos","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","sin","Doctril Forte® 400 mg comprimidos","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Apiretal® 100 mg/ml solución oral","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Paracetamol Kern® 100 mg/ml gotas","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Efetamol® 100 mg/ml solución","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Dolocatil infantil® 100 mg/ml solución","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Junifen® 40 mg/ml solución oral","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Dalsy® 40 mg/ml solución oral","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Apirofeno® 40 mg/ml suspensión oral","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Ibuprofeno Kern Pharma® 40 mg/ml","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Ibuprofeno Normon® 40 mg/ml","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Junifen® 200 mg comprimidos bucodispersables","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Neobufren® 400 mg y 600 mg comprimidos","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Dalsy® 400 mg comprimidos","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Ibuprofeno Kern Pharma® 400 mg y 600 mg comprimidos","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Ibuprofeno Normon® 400 mg y 600 mg comprimidos","ibuprofeno aine"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Gelocatil® 650 mg y 1000 mg comprimidos","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Paracetamol Kern® 500 mg comprimidos","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Febrectal® 650 mg comprimidos","paracetamol acetaminofeno"],
+ ["Analgésicos, antiinflamatorios, antipiréticos","baja","Termalgin® 500 mg y 650 mg comprimidos","paracetamol acetaminofeno"],
+ // Antihistamínicos
+ ["Antihistamínicos","baja","Cetirizina 10 mg comprimidos","cetirizina antialérgico"],
+ ["Antihistamínicos","baja","Zyrtec® 10 mg/ml gotas orales","cetirizina antialérgico"],
+ ["Antihistamínicos","baja","Polaramine® 2 mg comprimidos","dexclorfeniramina antialérgico"],
+ // Laxantes
+ ["Laxantes","sin","Movicol® pediátrico sabor neutro 6,9 g sobre","macrogol polietilenglicol peg 3350"],
+ ["Laxantes","sin","Movicol® sabor neutro 13,7 g sobre","macrogol polietilenglicol peg 3350"],
+ ["Laxantes","baja","Movicol® pediátrico chocolate 6,9 g sobre","macrogol polietilenglicol peg 3350"],
+ ["Laxantes","baja","Movicol® solución oral sabor naranja 13,1 g/25 ml","macrogol polietilenglicol peg 3350"],
+ ["Laxantes","baja","Casenlax® 4 g sobre","macrogol polietilenglicol peg 4000"],
+ ["Laxantes","baja","Casenlax® 10 g sobres","macrogol polietilenglicol peg 4000"],
+ // Antieméticos
+ ["Antieméticos","baja","Ondansetrón 4 mg y 8 mg comprimidos","ondansetron"],
+ ["Antieméticos","baja","Zofran Zydis® liofilizado oral, comprimidos bucodispersables","ondansetron"]
+].map(([grupo,cat,nombre,pa])=>({grupo,cat,nombre,pa,key:norm(grupo+" "+nombre+" "+pa)}));
+
+const CAT={sin:["ok","Sin hidratos de carbono"],baja:["warn","Baja proporción de HC"]};
+let catSel="all";
+const getCat=seg("#catFilter",v=>{catSel=v;renderDrugs()});
+
+function hl(text,q){
+  if(!q)return esc(text);
+  const n=norm(text);const i=n.indexOf(q);
+  if(i<0)return esc(text);
+  return esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+q.length))+"</mark>"+esc(text.slice(i+q.length));
+}
+const GALENIC_RISK=/jarabe|suspension|polvo para/;
+
+function renderDrugs(){
+  const raw=$("#q").value.trim();const q=norm(raw);
+  const words=q.split(/\s+/).filter(Boolean);
+  const hits=DRUGS.filter(d=>(catSel==="all"||d.cat===catSel)&&words.every(w=>d.key.includes(w)));
+  // veredicto
+  const v=$("#verdict");
+  if(!q){v.innerHTML='<p class="hint">Escriba al menos 3 letras para comprobar un fármaco.</p>';}
+  else if(q.length<3){v.innerHTML='<p class="hint">Siga escribiendo…</p>';}
+  else{
+    const all=DRUGS.filter(d=>words.every(w=>d.key.includes(w)));
+    if(all.length){
+      const s=all.filter(d=>d.cat==="sin").length,b=all.length-s;
+      v.innerHTML=`<div class="callout ok"><b>Figura en el listado del manual.</b> ${all.length} presentación${all.length>1?"es":""}: ${s} sin HC, ${b} con baja proporción de HC. Prefiera las presentaciones sin HC cuando existan.</div>`;
+    }else{
+      const sug=suggest(words);
+      v.innerHTML=(sug.length?`<div class="callout warn"><b>¿Quería decir…?</b> <span class="chips" style="margin-top:6px">${sug.map(s=>`<button type="button" class="chip" data-sug="${esc(s)}" style="cursor:pointer;font:inherit;font-size:.85rem">${esc(s)}</button>`).join("")}</span></div>`:"")+`<div class="callout crit"><b>«${esc(raw)}» no figura en la Tabla 43.</b> No se puede asegurar que esté libre de hidratos de carbono. Compruebe los excipientes en la ficha técnica (sección 6.1) con el detector de abajo.</div>`+(GALENIC_RISK.test(q)?'<div class="callout warn">Jarabes y suspensiones suelen tener más hidratos de carbono: buscar comprimidos, cápsulas o ampollas.</div>':"");
+    }
+  }
+  // listado
+  const groups={};hits.forEach(d=>(groups[d.grupo]=groups[d.grupo]||[]).push(d));
+  const L=$("#druglist");
+  if(!hits.length){L.innerHTML='<p class="hint">Sin resultados en el listado con este filtro.</p>';return;}
+  L.innerHTML=Object.entries(groups).map(([g,arr])=>`<div class="group"><h3>${esc(g)}<small>${arr.length}</small></h3>${
+    arr.map(d=>`<div class="drug"><div><div class="n">${hl(d.nombre,words[0]||"")}</div><div class="a">${esc(d.pa.split(" ")[0]==="amoxicilina"&&d.pa.includes("clavul")?"amoxicilina-clavulánico":d.pa.split(" ")[0])}</div></div><span class="pill ${CAT[d.cat][0]}">${CAT[d.cat][1]}</span></div>`).join("")
+  }</div>`).join("");
+}
+/* Sugerencias tolerantes a erratas (distancia de Levenshtein) */
+function lev(a,b){
+  const m=a.length,n=b.length;let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}
+  return p[n];
+}
+const VOCAB=[...new Set(DRUGS.flatMap(d=>norm(d.nombre.replace(/®/g,"")+" "+d.pa).split(/[^a-z]+/)).filter(w=>w.length>=4))];
+function suggest(words){
+  const out=new Set();
+  words.filter(w=>w.length>=4).forEach(w=>{
+    const tol=w.length<=5?1:2;
+    VOCAB.map(v=>[v,lev(w,v)])
+      .filter(([,d])=>d<=tol).sort((a,b)=>a[1]-b[1]).slice(0,4).forEach(([v])=>out.add(v));
+  });
+  return [...out];
+}
+$("#verdict").addEventListener("click",e=>{const b=e.target.closest("[data-sug]");if(!b)return;$("#q").value=b.dataset.sug;renderDrugs()});
+$("#q").addEventListener("input",renderDrugs);
+
+/* Detector de excipientes con hidratos de carbono (apartado 3.5.4.2) */
+const EXC=[
+ ["sacarosa",/sacarosa|azucar|sucrosa/],["almidón",/almidon/],["lactosa",/lactosa|lactitol/],
+ ["glucosa",/glucosa|dextrosa|glucosido/],["galactosa",/galactosa/],["fructosa",/fructosa/],
+ ["maltodextrina",/maltodextrina|dextrina/],["epilactosa",/epilactosa/],["tagatosa",/tagatosa/],["caramelo",/caramelo/],
+ ["sorbitol",/sorbitol/],["manitol",/manitol/],["maltitol",/maltitol|maltolol/],["xilitol",/xilitol/],
+ ["glicerol",/glicerol|glicerina/],["etanol",/etanol|alcohol etilico/],["propilenglicol",/propilenglicol|propileno glicol/]
+];
+function renderExc(){
+  const t=norm($("#exc").value);
+  const found=EXC.filter(([,r])=>r.test(t)).map(([n])=>n);
+  $("#excChips").innerHTML=EXC.map(([n])=>`<span class="chip${found.includes(n)?" hit":""}">${n}</span>`).join("");
+  const o=$("#excOut");
+  if(!t.trim()){o.innerHTML="";return}
+  o.innerHTML=found.length
+    ?`<div class="callout crit"><b>Contiene hidratos de carbono:</b> ${found.join(", ")}. Valorar otra presentación o calcular su aporte en los CHO del día.</div>`
+    :`<div class="callout ok"><b>No se detectan</b> excipientes con hidratos de carbono de la lista del manual. Confirmar también el contenido declarado por dosis.</div>`;
+}
+$("#exc").addEventListener("input",renderExc);
+
+/* =================== 2. CALCULADORA =================== */
+const SRO={gL:20,Na:50,K:20,Cl:41,cit:10};           // Sueroral Hiposódico: mmol/L, 1 sobre/1 L
+const GLU={gml:0.5,amp:20};                           // Glucocemin 50%
+const DIET_PCT={mct:20,combinada:20,atkins:6,bajoig:15}; // % CHO del VCT (Tabla 1)
+const DIET_LBL={clasica:"Clásica",mct:"MCT",combinada:"Combinada MCT",atkins:"Atkins modificada",bajoig:"Bajo índice glucémico"};
+
+let choMode="directo";
+seg("#choMode",v=>{choMode=v;$$("[data-mode]").forEach(x=>x.hidden=x.dataset.mode!==v);renderAll()});
+
+function hollidaySegar(kg,pob){
+  if(pob==="adulto")return {v:30*kg,txt:"30-35 ml/kg/día (adulto)",max:35*kg};
+  let v= kg<=10?100*kg : kg<=20?1000+50*(kg-10) : 1500+20*(kg-20);
+  return {v,txt:"Holliday-Segar",max:v};
+}
+
+function getCHO(){
+  const tipo=$("#c-tipo").value;
+  if(choMode==="directo")return {g:num($("#c-cho")),how:"introducido"};
+  if(choMode==="edad"){const g=+$("#c-edad").value;return {g,how:"estimado por edad (Tabla 42)"}}
+  const kcal=num($("#c-kcal"));
+  if(tipo==="clasica"){
+    const R=num($("#c-ratio")),P=num($("#c-prot"));
+    const unidades=kcal/(9*R+4);           // 1 unidad = R g grasa + 1 g (proteína + CHO)
+    return {g:unidades-P,how:`${fmt(kcal)} kcal ÷ (9×${fmt(R,1)} + 4) = ${fmt(unidades,1)} g de proteína + CHO, menos ${fmt(P,1)} g de proteína`};
+  }
+  const pct=num($("#c-pct"));
+  return {g:kcal*pct/100/4,how:`(${fmt(kcal)} kcal × ${fmt(pct,1)}%) ÷ 4 kcal/g`};
+}
+
+function renderCalcInputs(){
+  const tipo=$("#c-tipo").value;
+  $("#ratioField").hidden=tipo!=="clasica";
+  $("#protField").hidden=tipo!=="clasica";
+  $("#pctField").hidden=tipo==="clasica";
+  if(tipo!=="clasica"&&!$("#c-pct").dataset.touched)$("#c-pct").value=DIET_PCT[tipo];
+  const hints={
+    clasica:"DCC: CHO = kcal / (9 × ratio + 4) − proteínas (Tabla 22).",
+    mct:"DC-MCT: CHO ≈ 20% del VCT (Tablas 1 y 25).",
+    combinada:"Combinada MCT: CHO ≈ 20% del VCT (Tabla 1).",
+    atkins:"DAM: 10-20 g/día, 4-8% del VCT (Tabla 1). Mejor introducir los gramos pautados.",
+    bajoig:"Bajo IG: 40-60 g/día, 10-20% del VCT (Tabla 1)."
+  };
+  $("#calcHint").textContent=hints[tipo];
+}
+$("#c-pct").addEventListener("input",e=>{e.target.dataset.touched="1"});
+$("#c-tipo").addEventListener("change",()=>{delete $("#c-pct").dataset.touched;renderAll()});
+["#c-ratio","#c-kcal","#c-prot","#c-pct","#c-edad"].forEach(s=>$(s).addEventListener(s==="#c-edad"?"change":"input",renderAll));
+
+function renderCalc(){
+  renderCalcInputs();
+  const kg=num($("#c-peso")),pob=$("#c-pob").value,tipo=$("#c-tipo").value;
+  const {g,how}=getCHO();
+  const sum=$("#choSummary");
+  if(!(g>0)){
+    sum.className="callout crit";sum.innerHTML="<b>Revise los datos.</b> Los CHO calculados deben ser mayores de 0 g (compruebe kcal, ratio y proteínas).";
+    ["#sroOut","#gluOut","#hipoMini"].forEach(s=>$(s).innerHTML='<p class="hint">Introduzca los CHO diarios para calcular.</p>');
+    return;
+  }
+  // sincroniza CHO hacia la pestaña de hipoglucemia
+  if(choMode!=="directo"){$$('[data-sync="cho"]').forEach(o=>o.value=Math.round(g*10)/10)}
+  const ratioTxt=tipo==="clasica"?` ${fmt(num($("#c-ratio")),1)}:1`:"";
+  sum.className="callout ok";
+  sum.innerHTML=`<b>${fmt(g,1)} g de CHO al día</b> · ${DIET_LBL[tipo]}${ratioTxt}<br><span class="hint">${how}</span>`
+    +(tipo==="atkins"&&(g<10||g>20)?`<br><span class="hint">Fuera del rango habitual de la DAM (10-20 g/día).</span>`:"")
+    +(tipo==="bajoig"&&(g<40||g>60)?`<br><span class="hint">Fuera del rango habitual de bajo IG (40-60 g/día).</span>`:"");
+
+  const hs=kg>0?hollidaySegar(kg,pob):null;
+
+  /* --- SRO hiposódica --- */
+  const L=g/SRO.gL, ml=L*1000, sobres=Math.ceil(L-1e-9);
+  let sro=`<div class="big">
+    <div><b>${fmt(ml)}<small>ml/día</small></b><span>de SRO preparada</span></div>
+    <div><b>${fmt(sobres)}<small>sobre${sobres>1?"s":""}</small></b><span>cada uno en 1 L de agua</span></div>
+    <div><b>${fmt(ml/24,1)}<small>ml/h</small></b><span>si se reparte en 24 h</span></div></div>
+    <dl class="kv">
+      <dt>Glucosa aportada</dt><dd>${fmt(g,1)} g</dd>
+      <dt>Na⁺ (50 mmol/L)</dt><dd>${fmt(SRO.Na*L,1)} mEq</dd>
+      <dt>K⁺ (20 mmol/L)</dt><dd>${fmt(SRO.K*L,1)} mEq</dd>
+      <dt>Cl⁻ (41 mmol/L)</dt><dd>${fmt(SRO.Cl*L,1)} mEq</dd>
+      <dt>Citrato (10 mmol/L)</dt><dd>${fmt(SRO.cit*L,1)} mmol</dd>
+    </dl>`;
+  if(hs){
+    const resto=hs.v-ml;
+    sro+=`<dl class="kv"><dt>Necesidades basales de líquidos (${hs.txt})</dt><dd>${fmt(hs.v)} ml/día</dd>
+      <dt>Na⁺ necesario (2-3 mEq/kg/día)</dt><dd>${fmt(2*kg)}-${fmt(3*kg)} mEq</dd>
+      <dt>K⁺ necesario (1-2 mEq/kg/día)</dt><dd>${fmt(kg)}-${fmt(2*kg)} mEq</dd></dl>`;
+    if(resto>0){
+      const f=resto/1000;
+      sro+=`<div class="callout"><b>Resto de líquidos sin glucosa: ${fmt(resto)} ml/día</b> de agua con iones (Tabla 37/44): ${fmt(4*f,1)} g de ClNa + ${fmt(1.5*f,1)} g de ClK${pob==="nino"?` + ${fmt(0.8*f,1)} g de HCO₃Na si hay diarrea`:""}.</div>`;
+    }else{
+      sro+=`<div class="callout warn"><b>El volumen de SRO supera las necesidades basales</b> (${fmt(hs.v)} ml). Valorar Glucocemin 50% IV o repartir la glucosa con otra fuente más concentrada.</div>`;
+    }
+  }
+  sro+=`<p class="hint">Preparar siempre 1 sobre en 1 L de agua (no concentrar ni añadir azúcar) y desechar a las 24 h. Contraindicado en insuficiencia renal, vómitos importantes y continuos, obstrucción intestinal y menores de 1 mes.</p>`;
+  $("#sroOut").innerHTML=sro;
+
+  /* --- Glucocemin 50% --- */
+  const gml=g/GLU.gml, amps=gml/GLU.amp;
+  let glu=`<div class="big">
+    <div><b>${fmt(gml,1)}<small>ml/día</small></b><span>de Glucocemin 50%</span></div>
+    <div><b>${fmt(amps,2)}<small>amp.</small></b><span>de 20 ml (abrir ${Math.ceil(amps-1e-9)})</span></div></div>`;
+  if(hs){
+    const V=hs.v, ssf=V-gml, conc=g/V*100, gir=g*1000/(kg*1440);
+    const kLo=kg, kHi=2*kg;
+    glu+=`<dl class="kv">
+      <dt>Volumen total (${hs.txt})</dt><dd>${fmt(V)} ml/día</dd>
+      <dt>Suero fisiológico 0,9%</dt><dd>${fmt(ssf)} ml</dd>
+      <dt>+ Glucocemin 50%</dt><dd>${fmt(gml,1)} ml</dd>
+      <dt>Ritmo de infusión</dt><dd>${fmt(V/24,1)} ml/h</dd>
+      <dt>Concentración final de glucosa</dt><dd>${fmt(conc,2)} %</dd>
+      <dt>Aporte de glucosa</dt><dd>${fmt(gir,2)} mg/kg/min</dd>
+      <dt>K⁺ orientativo (1-2 mEq/kg/día)</dt><dd>${fmt(kLo)}-${fmt(kHi)} mEq · ${fmt(kLo/2,1)}-${fmt(kHi/2,1)} ml ClK 2M</dd>
+    </dl>
+    <div class="callout">Prescripción tipo: <b>SSF 0,9% ${fmt(ssf)} ml + Glucocemin 50% ${fmt(gml,1)} ml</b> + ClK según ionograma, a <b>${fmt(V/24,1)} ml/h</b> en 24 h.</div>`;
+    if(gir>6)glu+=`<div class="callout crit">Supera 6 mg/kg/min, límite de la ficha técnica en paciente crítico.</div>`;
+  }else{
+    glu+=`<p class="hint">Introduzca el peso para calcular la dilución en suero fisiológico y el ritmo.</p>`;
+  }
+  glu+=`<p class="hint">Uso exclusivo IV, siempre diluido como aditivo de soluciones para perfusión. Contraindicado en hiperglucemia, hipopotasemia y acidosis: corregir antes. Vigilar sodio, potasio y equilibrio ácido-base.</p>`;
+  $("#gluOut").innerHTML=glu;
+
+  /* --- Hipoglucemia (mini) --- */
+  const h=g*0.10;
+  $("#hipoMini").innerHTML=`<div class="big"><div><b>${fmt(h,1)}<small>g</small></b><span>de glucosa (10% de ${fmt(g,1)} g)</span></div></div>
+    <dl class="kv"><dt>SRO hiposódica (20 g/L)</dt><dd>${fmt(h*50)} ml</dd>
+    <dt>Suero glucosado 10% (100 g/L)</dt><dd>${fmt(h*10)} ml</dd>
+    <dt>Zumo de naranja natural (≈100 g/L)</dt><dd>${fmt(h*10)} ml</dd></dl>
+    <p class="hint">Solo si no se puede adelantar la siguiente toma. Ver pestaña 4.</p>`;
+}
+
+/* =================== 3. HIPERCETOSIS =================== */
+function renderHC(){
+  const kg=num($("#h-peso")),eb=num($("#h-eb"));
+  let o="";
+  if(kg>0){
+    o+=`<div class="result"><header><h3>Expansión con suero fisiológico</h3><span class="tag">10 ml/kg en bolo</span></header><div class="body">
+      <div class="big"><div><b>${fmt(10*kg)}<small>ml</small></b><span>SSF 0,9% · bolo 10 ml/kg</span></div>
+      <div><b>${fmt(10*kg)}-${fmt(20*kg)}<small>ml</small></b><span>si acidosis: 10-20 ml/kg</span></div></div>
+      <p class="hint">Sin vía IV: agua con 4 g ClNa + 1,5 g ClK por litro, por boca o sonda.</p></div></div>`;
+  }
+  if(kg>0&&Number.isFinite(eb)){
+    const def=0.3*kg*Math.abs(Math.min(eb,0));
+    let pauta,cls="";
+    if(eb>-9){pauta="No cumple criterio de bicarbonato por exceso de bases (EB &lt; -10). Tratar la causa con líquidos sin glucosa.";cls="ok"}
+    else if(eb>=-12){pauta=`1/3 del déficit en 6-8 h: <b>${fmt(def/3,1)} mEq</b> (${fmt(def/3,1)} ml de HCO₃Na 1M).`;cls="warn"}
+    else if(eb>=-17){pauta=`1/3 del déficit en 1-2 h: <b>${fmt(def/3,1)} mEq</b>. Si persiste, otro 1/3 en 6-8 h.`;cls="warn"}
+    else{pauta=`1/2 del déficit en 1-2 h: <b>${fmt(def/2,1)} mEq</b>. Si persiste, 1/3 (${fmt(def/3,1)} mEq) en 6-8 h.`;cls="crit"}
+    o+=`<div class="result"><header><h3>Déficit de bicarbonato (Astrup)</h3><span class="tag">0,3 × peso × EB</span></header><div class="body">
+      <div class="big"><div><b>${fmt(def,1)}<small>mEq</small></b><span>déficit total</span></div></div>
+      <div class="callout ${cls}">${pauta}</div>
+      <p class="hint">Solo tras reponer volumen y si pH &lt; 7,20, EB &lt; -10 o HCO₃ &lt; 10 mEq/L (Tabla 40). Corrección conservadora.</p></div></div>`;
+  }
+  $("#hcOut").innerHTML=o||'<p class="hint">Introduzca el peso.</p>';
+}
+["#h-eb"].forEach(s=>$(s).addEventListener("input",renderHC));
+
+/* =================== 4. HIPOGLUCEMIA =================== */
+const getSint=seg("#g-sint",()=>renderHG());
+function renderHG(){
+  const glu=num($("#g-glu")),kg=num($("#g-peso")),cho=num($("#g-cho")),pob=$("#g-pob").value,s=getSint();
+  const adulto=pob==="adulto";
+  let o="",nivel,cls;
+  if(!Number.isFinite(glu)){$("#hgOut").innerHTML='<p class="hint">Introduzca la glucemia.</p>';return}
+
+  const umbralAsint=adulto?45:30, objetivo=adulto?55:60;
+  const tratar = s!=="no" ? (glu<objetivo || s==="grave") : glu<umbralAsint;
+  if(s==="grave"){nivel="Hipoglucemia grave: vía intravenosa";cls="crit"}
+  else if(tratar){nivel=s==="no"?"Hipoglucemia asintomática por debajo del umbral: tratar":"Hipoglucemia sintomática: tratar";cls="warn"}
+  else if(glu<objetivo){nivel=`Glucemia baja asintomática (umbral de tratamiento ${adulto?"< 45":"< 30"} mg/dl)`;cls="ok"}
+  else{nivel="Glucemia en rango";cls="ok"}
+
+  o+=`<div class="callout ${cls}"><b>${nivel}</b> · ${fmt(glu)} mg/dl</div>`;
+
+  if(s==="grave"){
+    if(kg>0){
+      const gIV=0.25*kg;
+      o+=`<div class="result"><header><h3>Bolo IV de glucosa</h3><span class="tag">0,25 g/kg</span></header><div class="body">
+        <div class="big"><div><b>${fmt(2.5*kg,1)}<small>ml</small></b><span>suero glucosado 10%</span></div>
+        <div><b>${fmt(gIV,2)}<small>g</small></b><span>de glucosa</span></div></div>
+        <dl class="kv"><dt>Equivalente con Glucocemin 50% (diluir)</dt><dd>${fmt(gIV*2,1)} ml</dd></dl>
+        <ol class="steps"><li>Infundir en bolo. Eleva la glucemia unos 35 mg/dl.</li><li>Glucemia a los 10 min. Si sigue baja, repetir dosis.</li><li>Después medir cetonemia.</li></ol>
+        ${adulto?'<p class="hint">Adulto: glucosa 50% 25 ml IV seguida de perfusión al 5-10%. Sin vía: glucagón 1 mg SC/IM (puede ser ineficaz sin reserva de glucógeno).</p>':'<p class="hint">Sin vía: glucagón 0,5 mg SC/IM. Puede ser ineficaz sin reserva de glucógeno. Decúbito lateral, vigilar vómitos.</p>'}
+      </div></div>`;
+    }else o+='<p class="hint">Introduzca el peso para calcular el bolo.</p>';
+  }else if(tratar){
+    if(adulto){
+      const gA=glu<45?30:20;
+      o+=`<div class="result"><header><h3>Vía oral · adulto</h3><span class="tag">Tabla 38</span></header><div class="body">
+        <div class="big"><div><b>${gA}<small>g</small></b><span>de CHO</span></div></div>
+        <dl class="kv"><dt>Tabletas de glucosa</dt><dd>${gA===30?6:4}</dd><dt>Zumo</dt><dd>${gA*10} ml</dd>${gA===20?"<dt>Sobres de azúcar</dt><dd>2</dd>":"<dt>Alternativa IV</dt><dd>Glucosa 50% 25 ml</dd>"}</dl>
+        <p class="hint">Glucemia cada 15 min hasta &gt; 100 mg/dl. Repetir cada 15 min si precisa.</p></div></div>`;
+    }
+    if(cho>0){
+      const h=cho*0.10;
+      o+=`<div class="result"><header><h3>Vía oral · dieta cetogénica</h3><span class="tag">10% de ${fmt(cho,1)} g CHO/día</span></header><div class="body">
+        <p>Adelantar la siguiente toma. Si no es posible:</p>
+        <div class="big"><div><b>${fmt(h,1)}<small>g</small></b><span>de glucosa</span></div></div>
+        <dl class="kv"><dt>SRO hiposódica (20 g/L)</dt><dd>${fmt(h*50)} ml</dd>
+        <dt>Suero glucosado 10%</dt><dd>${fmt(h*10)} ml</dd>
+        <dt>Zumo de naranja natural</dt><dd>${fmt(h*10)} ml</dd></dl>
+        <p class="hint">Recontrolar glucemia y después la cetonemia.</p></div></div>`;
+    }else o+='<p class="hint">Introduzca los CHO diarios de la dieta para calcular la dosis oral.</p>';
+  }else{
+    o+=`<p class="hint">No precisa tratamiento con glucosa. Vigilar y recontrolar; valorar adelantar la siguiente toma.</p>`;
+  }
+  $("#hgOut").innerHTML=o;
+}
+["#g-glu"].forEach(s=>$(s).addEventListener("input",renderHG));
+
+function renderAll(){renderCalc();renderHC();renderHG()}
+renderDrugs();renderExc();renderAll();
+})();
+</script>

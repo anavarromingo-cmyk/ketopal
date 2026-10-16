@@ -1,0 +1,6 @@
+# Material de referencia con copyright: no se publica
+*.pdf
+*.md
+!README.md
+.vscode/
+.DS_Store
