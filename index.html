@@ -4,39 +4,43 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>KetoPal</title>
-<meta name="theme-color" content="#0a6863">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="KetoPal">
 <meta name="description" content="Apoyo a la decisión clínica en pacientes con dieta cetogénica: fármacos sin hidratos de carbono, cálculo de SRO hiposódica y Glucocemin 50%, hipercetosis e hipoglucemia.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
 <style>
 /* Layout: cabecera compacta + barra de pestañas fija; cada pestaña = columna de trabajo (entradas) + columna de resultados que cae debajo en móvil */
+/* Tokens: sistema de diseño PEDPAL (paleta del logotipo, Montserrat + Open Sans, bloques rectos). ok/warn/crit son variaciones de luminosidad de verde, naranja y fucsia */
 :root{
-  --bg:#eef2f1; --surface:#ffffff; --surface-2:#f6f9f8; --ink:#15211f; --muted:#566764; --line:#d4dddb;
-  --accent:#0a6863; --accent-ink:#ffffff; --accent-soft:#dcefed;
-  --ok:#1d7a3e; --ok-soft:#e0f2e6; --warn:#9a5b00; --warn-soft:#fbf0dc; --crit:#b42318; --crit-soft:#fde7e5;
-  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
-  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --r:10px;
+  --pp-orange:#f28c20; --pp-green:#96c93e; --pp-fuchsia:#cd2e94; --pp-blue:#32b7e4; --pp-brown:#443329; --on-orange:#443329;
+  --bg:#ffffff; --surface:#ffffff; --surface-2:#f1f1f1; --ink:#021228; --muted:#303d4f; --line:#0212282b; --sub:#443329;
+  --accent:#147495; --accent-ink:#ffffff; --accent-soft:#e3f4fb; --mark:#fde8d0; --focus:#021228;
+  --ok:#4b7a1c; --ok-soft:#eef6e2; --warn:#9a5200; --warn-soft:#fdf0e1; --crit:#b22f7f; --crit-soft:#fae8f3;
+  --f-display:"Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Open Sans", "Segoe UI", Arial, sans-serif;
+  --f-mono:"Open Sans", "Segoe UI", Arial, sans-serif;
+  --r:4px; --stripe:6px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0e1514; --surface:#162120; --surface-2:#1b2827; --ink:#e4edeb; --muted:#9db0ac; --line:#2b3a38;
-  --accent:#4cc2b6; --accent-ink:#06201e; --accent-soft:#163a37;
-  --ok:#6fd394; --ok-soft:#14301f; --warn:#f2b552; --warn-soft:#352812; --crit:#ff8a7e; --crit-soft:#3a1714;
+  --bg:#000916; --surface:#0b1626; --surface-2:#101d30; --ink:#e8edf3; --muted:#a9b4c2; --line:#22324a; --sub:#d9c9bd;
+  --accent:#32b7e4; --accent-ink:#000916; --accent-soft:#0d2a3a; --mark:#3a2508; --focus:#e8edf3;
+  --ok:#a8d65a; --ok-soft:#152209; --warn:#f5a54a; --warn-soft:#2b1a06; --crit:#ec7cc1; --crit-soft:#2a0f20;
   color-scheme:dark;}}
 :root[data-theme="dark"]{
-  --bg:#0e1514; --surface:#162120; --surface-2:#1b2827; --ink:#e4edeb; --muted:#9db0ac; --line:#2b3a38;
-  --accent:#4cc2b6; --accent-ink:#06201e; --accent-soft:#163a37;
-  --ok:#6fd394; --ok-soft:#14301f; --warn:#f2b552; --warn-soft:#352812; --crit:#ff8a7e; --crit-soft:#3a1714;
+  --bg:#000916; --surface:#0b1626; --surface-2:#101d30; --ink:#e8edf3; --muted:#a9b4c2; --line:#22324a; --sub:#d9c9bd;
+  --accent:#32b7e4; --accent-ink:#000916; --accent-soft:#0d2a3a; --mark:#3a2508; --focus:#e8edf3;
+  --ok:#a8d65a; --ok-soft:#152209; --warn:#f5a54a; --warn-soft:#2b1a06; --crit:#ec7cc1; --crit-soft:#2a0f20;
   color-scheme:dark;}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;margin:0}
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px}
-h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0;line-height:1.2}
+h3{font-weight:500}
 h2{font-size:1.45rem}
 h3{font-size:1.08rem}
 p{margin:0}
@@ -45,18 +49,22 @@ small,.muted{color:var(--muted)}
 .mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 
 header.top{padding-block:20px 12px}
+.franja{display:flex;height:var(--stripe)}
+.franja i{flex:1}
+.franja.fina{height:3px}
+.franja i:nth-child(1){background:var(--pp-orange)}.franja i:nth-child(2){background:var(--pp-green)}.franja i:nth-child(3){background:var(--pp-fuchsia)}.franja i:nth-child(4){background:var(--pp-blue)}.franja i:nth-child(5){background:var(--pp-brown)}
 .brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
 .brand h1{font-size:1.7rem;letter-spacing:-.01em}
 .brand h1 span{color:var(--accent)}
-.brand p{color:var(--muted);font-size:.92rem}
+.brand p{color:var(--sub);font-family:var(--f-display);font-weight:500;font-size:.92rem}
 .disclaimer{margin-top:10px;font-size:.84rem;color:var(--muted);max-width:80ch}
 
 nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
-nav.tabs button{flex:0 0 auto;font:inherit;font-weight:700;font-size:.95rem;background:none;border:0;color:var(--muted);padding:12px 14px 11px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button{flex:0 0 auto;font:inherit;font-weight:600;font-size:.95rem;background:none;border:0;color:var(--muted);padding:12px 14px 11px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
 nav.tabs button .k{font-family:var(--f-mono);font-size:.78rem;margin-right:6px;opacity:.75}
-nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
-nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--pp-orange)}
+nav.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 
 main{padding-block:22px 40px}
 section.panel{display:grid;gap:18px}
@@ -73,16 +81,16 @@ section.panel{display:grid;gap:18px}
 .field{display:grid;gap:5px}
 .field label,.lbl{font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-input[type=number],input[type=search],input[type=text],select,textarea{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0;font-size:16px}
+input[type=number],input[type=search],input[type=text],select,textarea{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;width:100%;min-width:0;font-size:16px}
 input[type=number]{font-family:var(--f-mono)}
 textarea{min-height:86px;resize:vertical}
-input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .unit{position:relative}
 .unit input{padding-right:64px}
 .unit span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.82rem;color:var(--muted);pointer-events:none;font-family:var(--f-mono)}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
 .seg button{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.seg button[aria-pressed="true"]{background:var(--pp-orange);color:var(--on-orange);border-color:var(--pp-orange);font-weight:600}
 .hint{font-size:.84rem;color:var(--muted)}
 
 /* Resultados */
@@ -98,7 +106,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 dl.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;margin:0;font-size:.95rem}
 dl.kv dt{color:var(--muted)}
 dl.kv dd{margin:0;font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
-.callout{border-radius:8px;padding:10px 12px;font-size:.92rem;border-left:4px solid var(--line);background:var(--surface-2)}
+.callout{border-radius:0;padding:10px 12px;font-size:.92rem;border-left:4px solid var(--line);background:var(--surface-2)}
 .callout.ok{border-color:var(--ok);background:var(--ok-soft)}
 .callout.warn{border-color:var(--warn);background:var(--warn-soft)}
 .callout.crit{border-color:var(--crit);background:var(--crit-soft)}
@@ -123,10 +131,10 @@ ol.steps{margin:0;padding-left:1.3em;display:grid;gap:8px}
 .drug:last-child{border-bottom:0}
 .drug .n{font-weight:700}
 .drug .a{font-size:.85rem;color:var(--muted)}
-mark{background:var(--accent-soft);color:inherit;border-radius:3px;padding:0 2px}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 .filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font-size:.82rem;padding:3px 9px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
+.chip{font-size:.82rem;padding:3px 9px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line)}
 .chip.hit{background:var(--crit-soft);border-color:var(--crit);color:var(--crit);font-weight:700}
 
 /* Tablas */
@@ -139,7 +147,7 @@ td.num{text-align:right}
 /* Flujo de decisión */
 .flow{display:grid;gap:10px}
 .node{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:var(--surface)}
-.node .q{font-family:var(--f-display);font-weight:700}
+.node .q{font-family:var(--f-display);font-weight:600}
 .branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (max-width:640px){.branches{grid-template-columns:minmax(0,1fr)}}
 .branch{border-radius:var(--r);padding:12px 14px;display:grid;gap:6px;border-top:4px solid var(--line);background:var(--surface)}
@@ -149,6 +157,10 @@ td.num{text-align:right}
 
 nav.tabs .sh{display:none}
 dl.kv dd{overflow-wrap:anywhere}
+.cite{font-size:.95rem;line-height:1.55}
+.authors{margin:0;padding-left:1.1em;columns:2 260px;column-gap:24px;font-size:.88rem}
+.authors li{break-inside:avoid;margin-bottom:6px}
+.authors span{display:block;color:var(--muted);font-size:.8rem}
 /* Móvil */
 @media (max-width:640px){
   body{font-size:15.5px}
@@ -156,7 +168,7 @@ dl.kv dd{overflow-wrap:anywhere}
   .brand h1{font-size:1.45rem}
   .brand p{font-size:.85rem}
   .disclaimer{font-size:.78rem;margin-top:6px}
-  nav.tabs .wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding-inline:4px;overflow:visible}
+  nav.tabs .wrap{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;padding-inline:4px;overflow:visible}
   nav.tabs button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 2px 8px;font-size:.8rem;min-height:52px;white-space:normal;text-align:center;line-height:1.15}
   nav.tabs button .k{margin:0;font-size:.72rem}
   nav.tabs .lg{display:none}
@@ -181,12 +193,13 @@ dl.kv dd{overflow-wrap:anywhere}
   footer.foot .wrap{flex-direction:column}
 }
 @media (max-width:360px){.row{grid-template-columns:minmax(0,1fr)}}
-footer.foot{border-top:1px solid var(--line);padding-block:16px 28px;font-size:.84rem;color:var(--muted)}
+footer.foot{padding-block:16px 28px;font-size:.84rem;color:var(--muted)}
 footer.foot .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}
 @media (prefers-reduced-motion:no-preference){.result,.callout{transition:background-color .2s,border-color .2s}}
 </style>
 </head>
 <body>
+<div class="franja" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 
 
 <header class="top">
@@ -205,6 +218,7 @@ footer.foot .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:
     <button role="tab" id="t-calculo" aria-controls="calculo" aria-selected="false"><span class="k">2</span><span class="tl"><span class="lg">SRO y glucosa</span><span class="sh">SRO/Gluc.</span></span></button>
     <button role="tab" id="t-hipercetosis" aria-controls="hipercetosis" aria-selected="false"><span class="k">3</span><span class="tl"><span class="lg">Hipercetosis</span><span class="sh">Hiperceto.</span></span></button>
     <button role="tab" id="t-hipoglucemia" aria-controls="hipoglucemia" aria-selected="false"><span class="k">4</span><span class="tl"><span class="lg">Hipoglucemia</span><span class="sh">Hipogluc.</span></span></button>
+    <button role="tab" id="t-creditos" aria-controls="creditos" aria-selected="false"><span class="k">5</span><span class="tl">Créditos</span></button>
   </div>
 </nav>
 
@@ -545,8 +559,72 @@ footer.foot .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:
     </div>
   </div>
 </section>
+
+<!-- ================= 5. CRÉDITOS ================= -->
+<section class="panel" id="creditos" role="tabpanel" aria-labelledby="t-creditos" hidden>
+  <div class="lede">
+    <h2>Créditos y propiedad intelectual</h2>
+    <p>KetoPal resume, para su consulta rápida en la práctica clínica, pautas publicadas en el manual de referencia y en las fichas técnicas oficiales. El contenido clínico pertenece a sus autores y titulares.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="stack">
+      <div class="box">
+        <h3>Fuente principal</h3>
+        <p class="cite">Pedrón Giner C, coordinadora. <em>Manual para la práctica de la dieta cetogénica</em>. 2.ª ed. 2021. Disponible en: <a href="https://www.seghnp.org/documentos/manual-para-practica-de-dieta-cetogenica-2a-edicion" target="_blank" rel="noopener">SEGHNP</a> · <a href="https://www.senep.es/images/Manual_Dieta_Cetoge%C3%ACnica_VF.pdf" target="_blank" rel="noopener">SENEP (PDF)</a>.</p>
+        <dl class="kv">
+          <dt>Coordinadora</dt><dd>Dra. Consuelo Pedrón Giner</dd>
+          <dt>Titular del copyright</dt><dd>© 2021 Autores</dd>
+          <dt>Patrocinio</dt><dd>Nutricia</dd>
+        </dl>
+        <div class="callout"><b>Todos los derechos reservados.</b> Según el propio manual, queda prohibida la reproducción parcial o total de la obra por cualquier medio sin la autorización escrita del titular del copyright. KetoPal no reproduce el manual: cita sus apartados y tablas como referencia. Para la pauta completa, consulte la obra original.</div>
+      </div>
+
+      <div class="box">
+        <h3>Fichas técnicas</h3>
+        <ul class="clean">
+          <li>Sueroral Hiposódico®, n.º reg. 59.877.</li>
+          <li>Glucocemin 50%®, n.º reg. 74.781.</li>
+        </ul>
+        <p class="hint">Consultadas en <a href="https://cima.aemps.es/cima/publico/home.html" target="_blank" rel="noopener">CIMA · AEMPS</a>. Las marcas comerciales citadas (®) pertenecen a sus respectivos titulares; su mención no implica relación con ellos.</p>
+      </div>
+
+      <div class="box flat">
+        <h3>KetoPal</h3>
+        <dl class="kv">
+          <dt>Desarrollo</dt><dd>Álvaro Navarro Mingorance</dd>
+          <dt>Diseño</dt><dd>Sistema de diseño PEDPAL</dd>
+          <dt>Licencia</dt><dd><a href="https://creativecommons.org/licenses/by-nc/4.0/deed.es" target="_blank" rel="noopener">CC BY-NC 4.0</a></dd>
+        </dl>
+        <p class="hint">La licencia CC BY-NC 4.0 cubre el código y los textos propios de KetoPal. No se extiende al contenido del manual ni de las fichas técnicas, que conservan los derechos de sus titulares. KetoPal es una herramienta independiente; no está avalada por los autores del manual ni por Nutricia.</p>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>Autores del manual</h3>
+      <ul class="authors">
+        <li>Consuelo Pedrón Giner<span>Hospital Infantil Universitario Niño Jesús. Madrid</span></li>
+        <li>Loredana Arhip<span>Hospital General Universitario Gregorio Marañón. Madrid</span></li>
+        <li>Elvira Cañedo Villarroya<span>Hospital Infantil Universitario Niño Jesús. Madrid</span></li>
+        <li>Mª Cristina Cuerda Compés<span>Hospital General Universitario Gregorio Marañón. Madrid</span></li>
+        <li>Natalia Egea Castillo<span>Hospital Universitario Sant Joan de Déu. Barcelona</span></li>
+        <li>Beatriz García Alcolea<span>Hospital Infantil Universitario Niño Jesús. Madrid</span></li>
+        <li>Juan José García Peñas<span>Hospital Infantil Universitario Niño Jesús. Madrid</span></li>
+        <li>Domingo González-Lamuño Leguina<span>Hospital Universitario Marqués de Valdecilla. Santander</span></li>
+        <li>Alejandra Gutiérrez Sánchez<span>Hospital Universitario Sant Joan de Déu. Barcelona</span></li>
+        <li>Cecilia Martínez Costa<span>Hospital Clínico Universitario. Valencia</span></li>
+        <li>Daniela Meneses<span>Nutricia</span></li>
+        <li>Laura Andrea Puerta Macfarland<span>Hospital Infantil Universitario Niño Jesús. Madrid</span></li>
+        <li>Jana Ruiz Herrero<span>Hospital San Rafael. Madrid</span></li>
+        <li>Justo Valverde Fernández<span>Hospital Infantil Universitario Virgen del Rocío. Sevilla</span></li>
+      </ul>
+      <p class="src">Relación de autores y filiaciones tal como figuran en la 2.ª edición.</p>
+    </div>
+  </div>
+</section>
 </main>
 
+<div class="franja fina" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 <footer class="foot">
   <div class="wrap">
     <span>© 2026 Álvaro Navarro · CC BY-NC 4.0</span>
@@ -579,7 +657,7 @@ tabs.forEach((t,i)=>{
 });
 $$("[data-goto]").forEach(b=>b.addEventListener("click",()=>{show(b.dataset.goto);window.scrollTo({top:0})}));
 const start=(location.hash||"").slice(1);
-if(["farmacos","calculo","hipercetosis","hipoglucemia"].includes(start))show(start);
+if(["farmacos","calculo","hipercetosis","hipoglucemia","creditos"].includes(start))show(start);
 
 /* ---------- Segmentados ---------- */
 function seg(id,cb){
