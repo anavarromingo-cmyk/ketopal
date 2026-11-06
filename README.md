@@ -13,7 +13,16 @@ Herramienta web de apoyo clínico para el manejo de pacientes con dieta cetogén
 
 ## Uso
 
-Página HTML única, sin servidor ni dependencias. Abrir `index.html` en el navegador. Adaptada a móvil. No guarda datos de pacientes.
+Página HTML única, sin servidor ni dependencias. Abrir `index.html` en el navegador. Adaptada a móvil con navegación inferior fija al estilo del sistema PEDPAL. No guarda datos de pacientes.
+
+## Instalación como aplicación (PWA)
+
+KetoPal es una Progressive Web App: se puede instalar en el teléfono y abrir como una app más, con icono propio en el escritorio y funcionamiento sin conexión.
+
+- **Android (Chrome)**: abrir https://anavarromingo-cmyk.github.io/ketopal/ → menú ⋮ → «Instalar app» (o «Añadir a la pantalla de inicio»).
+- **iOS (Safari)**: abrir la página → botón Compartir → «Añadir a la pantalla de inicio».
+
+Tras la primera carga, el service worker guarda los archivos y la app funciona sin red.
 
 ## Fuentes
 
